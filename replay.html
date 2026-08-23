@@ -1,0 +1,662 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Contract Negotiation — Replay</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg:#f6f6f2; --panel:#ffffff; --ink:#1a1a1a; --muted:#6b6b64; --line:#e2e2da;
+    --gov:#1f3a5f; --offa:#0f6b6b; --offb:#9a5b00;
+    --ins:#0a7d33; --del:#b3261e; --hl:#fff7dd;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--ink);
+    font:16px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+  .app{display:flex;flex-direction:column;height:100vh}
+  header{padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel);
+    display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.2px}
+  h1 small{display:block;font-weight:400;color:var(--muted);font-size:12px;margin-top:2px}
+  .controls{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap}
+  button{font:inherit;border:1px solid var(--line);background:#fff;border-radius:8px;
+    padding:8px 12px;cursor:pointer;color:var(--ink)}
+  button:hover{background:#f0f0ea}
+  button.primary{background:var(--ink);color:#fff;border-color:var(--ink);min-width:104px}
+  button:disabled{opacity:.4;cursor:default}
+  .speed{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px}
+  .file{font-size:13px;color:var(--muted)}
+  .file input{display:none}
+  .file label{cursor:pointer;text-decoration:underline}
+  .legend{display:flex;gap:10px;align-items:stretch;padding:10px 20px;border-bottom:1px solid var(--line);
+    background:var(--panel);flex-wrap:wrap}
+  .party{flex:1;min-width:220px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
+  .party .who{font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .party ul{margin:6px 0 0;padding-left:18px}
+  .party li{font-size:12.5px;color:#333;margin:2px 0}
+  .party .hidden-obj{display:none}
+  .party .hidden-obj .tag{color:var(--del);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+  body.reveal .party .hidden-obj{display:block}
+  .toggle{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+  main{flex:1;display:grid;grid-template-columns:1.15fr .85fr;gap:0;min-height:0}
+  .doc,.trace{overflow:auto;padding:22px 26px;min-height:0}
+  .doc{border-right:1px solid var(--line);background:#fbfbf8}
+  .doc h2,.trace h2{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);
+    margin:0 0 14px;font-weight:700}
+  .doc-title{font-family:Georgia,'Times New Roman',serif;font-size:22px;margin:0 0 18px;font-weight:700}
+  .clause{font-family:Georgia,'Times New Roman',serif;font-size:18px;line-height:1.55;margin:0 0 16px;
+    padding:8px 12px;border-left:3px solid transparent;border-radius:4px;transition:background .3s}
+  .clause .h{font-weight:700;display:block;margin-bottom:2px}
+  .clause.changed{background:var(--hl)}
+  .clause.g-gov{border-left-color:var(--gov)} .clause.g-off_a{border-left-color:var(--offa)}
+  .clause.g-off_b{border-left-color:var(--offb)}
+  .clause.dim{opacity:.62}
+  ins{background:rgba(10,125,51,.12);color:var(--ins);text-decoration:none;
+    border-bottom:2px solid var(--ins);padding:0 1px}
+  del{color:var(--del);text-decoration:line-through;opacity:.8;padding:0 1px}
+  .ghost{opacity:.7}
+  .entry{border:1px solid var(--line);border-left-width:4px;border-radius:10px;padding:12px 14px;margin:0 0 12px;
+    background:#fff;opacity:0;transform:translateY(6px);animation:rise .35s forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+  .entry.gov{border-left-color:var(--gov)} .entry.off_a{border-left-color:var(--offa)}
+  .entry.off_b{border-left-color:var(--offb)}
+  .entry .name{font-weight:700;font-size:14px}
+  .entry .role{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:#fff;
+    padding:2px 7px;border-radius:20px;margin-left:8px;vertical-align:middle}
+  .role.gov{background:var(--gov)} .role.off_a{background:var(--offa)} .role.off_b{background:var(--offb)}
+  .entry .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);
+    margin:10px 0 3px;font-weight:700}
+  .entry .reasoning{font-style:italic;color:#333;background:#f6f6ef;border-radius:6px;padding:8px 10px}
+  .entry .says{font-size:15px}
+  .entry .edit{font-size:12.5px;color:#444;margin:3px 0;padding-left:14px;position:relative}
+  .entry .edit:before{content:"›";position:absolute;left:2px;color:var(--muted)}
+  .entry .edit b{color:var(--ink)}
+  .decision{margin-top:10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+  .decision.counter{color:var(--gov)} .decision.award{color:var(--ins)}
+  .award-banner{padding:14px 20px;background:var(--ink);color:#fff;text-align:center;font-size:16px;
+    font-weight:600;display:none}
+  .award-banner.show{display:block}
+  .progress{height:4px;background:var(--line)}
+  .progress .bar{height:100%;background:var(--ink);width:0;transition:width .3s}
+  .placeholder{color:var(--muted);font-style:italic}
+</style>
+
+<div class="app">
+  <header>
+    <h1>AI Contract Negotiation <small id="sub">— replay</small></h1>
+    <div class="controls">
+      <span class="file"><label for="load">Load recording…</label><input id="load" type="file" accept="application/json"></span>
+      <button id="restart" title="Restart">⏮</button>
+      <button id="back" title="Step back">◀ Step</button>
+      <button id="play" class="primary">▶ Play</button>
+      <button id="fwd" title="Step forward">Step ▶</button>
+      <span class="speed">Speed
+        <input id="speed" type="range" min="0.5" max="3" step="0.5" value="1">
+        <span id="speedval">1×</span>
+      </span>
+    </div>
+  </header>
+
+  <div class="legend" id="legend"></div>
+  <div style="padding:8px 20px;border-bottom:1px solid var(--line);background:var(--panel)">
+    <label class="toggle"><input type="checkbox" id="reveal"> Reveal hidden objectives</label>
+  </div>
+
+  <div class="award-banner" id="award"></div>
+  <div class="progress"><div class="bar" id="bar"></div></div>
+
+  <main>
+    <section class="doc" id="doc"></section>
+    <section class="trace" id="trace"><h2>Reasoning &amp; moves</h2>
+      <div class="placeholder">Press Play to begin the negotiation.</div>
+    </section>
+  </main>
+</div>
+
+<script id="embedded-transcript" type="application/json">{
+  "scenario": {
+    "title": "AI Case-Management Platform \u2014 Competitive Negotiation",
+    "document_title": "Contract Terms \u2014 Cloud-Based AI Case-Management Platform",
+    "context": "The Government intends to award a firm-fixed-price contract for a cloud-hosted, AI-assisted case-management platform. Two offerors are competing. The Government may counter, press either party, and ultimately award to the best value.",
+    "max_rounds": 3,
+    "parties": [
+      {
+        "id": "gov",
+        "name": "Contracting Officer (Government)",
+        "role": "government",
+        "public_objectives": [
+          "Award on a best-value basis and get the platform in service on a 12-month base term with option years.",
+          "Require FedRAMP authorization appropriate to the data sensitivity.",
+          "Secure clear, enforceable service levels."
+        ],
+        "hidden_objectives": [
+          "Firm internal budget ceiling of $2.4M per year \u2014 do not exceed it.",
+          "MUST obtain unlimited Government data rights AND Government ownership of model outputs generated for the agency.",
+          "Strongly prefers robust data-portability / exit rights to avoid vendor lock-in; treat lock-in as a disqualifier if unaddressed."
+        ]
+      },
+      {
+        "id": "off_a",
+        "name": "Offeror A \u2014 NimbusGov (incumbent integrator)",
+        "role": "offeror",
+        "public_objectives": [
+          "Win on proven reliability: existing FedRAMP High authorization and 99.9% uptime.",
+          "Emphasize strong past performance and low delivery risk."
+        ],
+        "hidden_objectives": [
+          "Must retain intellectual property in its pre-trained models \u2014 do not concede model IP.",
+          "Needs an effective price at or above ~$2.6M/yr to protect margin.",
+          "Willing to concede on data portability if pressed, but resist full ownership of outputs."
+        ]
+      },
+      {
+        "id": "off_b",
+        "name": "Offeror B \u2014 Meridian AI (challenger)",
+        "role": "offeror",
+        "public_objectives": [
+          "Win on price and a modern model stack with fast onboarding.",
+          "Offer a competitive service-level commitment."
+        ],
+        "hidden_objectives": [
+          "Can go as low as $2.1M/yr to win the reference customer \u2014 winning this logo matters more than first-year margin.",
+          "Only holds FedRAMP Moderate today; High authorization is in progress and not yet complete \u2014 this is the key vulnerability.",
+          "Willing to grant broad Government data rights and output ownership to close the deal."
+        ]
+      }
+    ],
+    "initial_clauses": [
+      {
+        "id": "c1",
+        "heading": "1. Term and Options",
+        "text": "Base period of twelve (12) months with two (2) twelve-month option periods, exercisable at the Government's discretion."
+      },
+      {
+        "id": "c2",
+        "heading": "2. Price",
+        "text": "Firm-fixed annual price to be proposed by the Offeror."
+      },
+      {
+        "id": "c3",
+        "heading": "3. Security and Compliance",
+        "text": "The platform shall meet the security requirements applicable to the data processed, including an appropriate FedRAMP authorization."
+      },
+      {
+        "id": "c4",
+        "heading": "4. Data Rights and Ownership",
+        "text": "Rights in Government data and in outputs generated by the platform to be defined by the parties."
+      },
+      {
+        "id": "c5",
+        "heading": "5. Service Levels",
+        "text": "The Contractor shall maintain platform availability and response times consistent with an agreed service-level agreement."
+      },
+      {
+        "id": "c6",
+        "heading": "6. Intellectual Property in Models",
+        "text": "Ownership of and rights in the Contractor's underlying models to be defined by the parties."
+      },
+      {
+        "id": "c7",
+        "heading": "7. Termination and Data Portability",
+        "text": "Upon termination, the Contractor shall return Government data; further exit and portability obligations to be defined."
+      }
+    ]
+  },
+  "turns": [
+    {
+      "index": 0,
+      "actor": "off_a",
+      "actor_name": "Offeror A \u2014 NimbusGov (incumbent integrator)",
+      "role": "offeror",
+      "reasoning": "Lead on our FedRAMP High ATO and uptime to justify a premium, and anchor price high at $2.65M to protect our margin floor (~$2.6M). Critically, hold model IP and avoid giving up output ownership.",
+      "message": "NimbusGov brings an existing FedRAMP High authorization and a 99.9% uptime record. Our firm-fixed price reflects proven, low-risk delivery.",
+      "edits": [
+        {
+          "clause_id": "c2",
+          "op": "replace",
+          "new": "Firm-fixed annual price of $2,650,000 per year, reflecting FedRAMP High operations and guaranteed availability.",
+          "rationale": "Anchor high on proven reliability.",
+          "old": "Firm-fixed annual price to be proposed by the Offeror."
+        },
+        {
+          "clause_id": "c3",
+          "op": "replace",
+          "new": "The platform operates under a current FedRAMP High authorization (ATO on file).",
+          "rationale": "Assert compliance strength.",
+          "old": "The platform shall meet the security requirements applicable to the data processed, including an appropriate FedRAMP authorization."
+        },
+        {
+          "clause_id": "c5",
+          "op": "replace",
+          "new": "Contractor guarantees 99.9% monthly availability with a 15-minute priority response target.",
+          "rationale": "Back the reliability claim.",
+          "old": "The Contractor shall maintain platform availability and response times consistent with an agreed service-level agreement."
+        },
+        {
+          "clause_id": "c6",
+          "op": "replace",
+          "new": "The Contractor retains all ownership of and rights in its pre-trained models; the Government receives a license to use the platform.",
+          "rationale": "Protect model IP (priority).",
+          "old": "Ownership of and rights in the Contractor's underlying models to be defined by the parties."
+        },
+        {
+          "clause_id": "c4",
+          "op": "replace",
+          "new": "The Government receives a license to use platform outputs for internal mission purposes; the Contractor retains ownership of outputs and models.",
+          "rationale": "Limit data-rights exposure.",
+          "old": "Rights in Government data and in outputs generated by the platform to be defined by the parties."
+        }
+      ],
+      "decision": null
+    },
+    {
+      "index": 1,
+      "actor": "off_b",
+      "actor_name": "Offeror B \u2014 Meridian AI (challenger)",
+      "role": "offeror",
+      "reasoning": "Undercut hard on price to win the reference logo \u2014 I can go as low as $2.1M and winning matters more than year-one margin. Granting broad data rights and output ownership costs me little and directly appeals to the Government. Handle the FedRAMP gap carefully: I only hold Moderate today, High is in progress.",
+      "message": "Meridian AI delivers a modern model stack at a materially lower price, with broad data rights for the Government and fast onboarding.",
+      "edits": [
+        {
+          "clause_id": "c2",
+          "op": "replace",
+          "new": "Firm-fixed annual price of $2,150,000 per year.",
+          "rationale": "Undercut decisively on price.",
+          "old": "Firm-fixed annual price of $2,650,000 per year, reflecting FedRAMP High operations and guaranteed availability."
+        },
+        {
+          "clause_id": "c4",
+          "op": "replace",
+          "new": "The Government owns all outputs generated for the agency and receives unlimited rights in Government data; the Contractor claims no ownership of outputs.",
+          "rationale": "Grant the broad rights the buyer wants.",
+          "old": "The Government receives a license to use platform outputs for internal mission purposes; the Contractor retains ownership of outputs and models."
+        },
+        {
+          "clause_id": "c3",
+          "op": "replace",
+          "new": "The platform holds FedRAMP Moderate authorization today, with FedRAMP High authorization in progress.",
+          "rationale": "Disclose posture, framed forward.",
+          "old": "The platform operates under a current FedRAMP High authorization (ATO on file)."
+        },
+        {
+          "clause_id": "c5",
+          "op": "replace",
+          "new": "Contractor commits to 99.9% monthly availability and a 10-minute priority response target.",
+          "rationale": "Match on service levels.",
+          "old": "Contractor guarantees 99.9% monthly availability with a 15-minute priority response target."
+        }
+      ],
+      "decision": null
+    },
+    {
+      "index": 2,
+      "actor": "gov",
+      "actor_name": "Contracting Officer (Government)",
+      "role": "government",
+      "reasoning": "Privately: my ceiling is $2.4M \u2014 Nimbus at $2.65M is over it; Meridian at $2.15M is well under. Data rights are a hard requirement, and Meridian's ownership language is exactly what I need while Nimbus's is inadequate. I must also lock portability to prevent lock-in. Meridian's FedRAMP gap is my only real concern. I'll press both publicly on rights and portability and signal price pressure to Nimbus.",
+      "message": "The Government requires unlimited rights in its data and ownership of outputs, plus enforceable exit and portability terms. Price must reflect budget reality, and compliance posture will weigh heavily.",
+      "edits": [
+        {
+          "clause_id": "c4",
+          "op": "replace",
+          "new": "The Government shall receive unlimited rights in all Government data and shall own all outputs generated by the platform for the agency. No contractor claim of ownership in such outputs is permitted.",
+          "rationale": "Set the data-rights floor.",
+          "old": "The Government owns all outputs generated for the agency and receives unlimited rights in Government data; the Contractor claims no ownership of outputs."
+        },
+        {
+          "clause_id": "c7",
+          "op": "replace",
+          "new": "Upon termination or non-renewal, the Contractor shall return all Government data in a documented, non-proprietary format within 30 days and provide reasonable transition assistance; no exit fees apply.",
+          "rationale": "Eliminate lock-in (priority).",
+          "old": "Upon termination, the Contractor shall return Government data; further exit and portability obligations to be defined."
+        }
+      ],
+      "decision": {
+        "type": "counter"
+      }
+    },
+    {
+      "index": 3,
+      "actor": "off_a",
+      "actor_name": "Offeror A \u2014 NimbusGov (incumbent integrator)",
+      "role": "offeror",
+      "reasoning": "The Government's ownership demand collides with my need to retain model IP and avoid conceding output ownership. I can offer government-purpose rights as a compromise and shave price to $2.55M, but I can't reach their apparent budget without breaking my ~$2.6M margin floor. Hold the model IP clause.",
+      "message": "NimbusGov can offer broad government-purpose rights and a modest price reduction, while preserving the model investments that make our reliability possible.",
+      "edits": [
+        {
+          "clause_id": "c2",
+          "op": "replace",
+          "new": "Firm-fixed annual price of $2,550,000 per year.",
+          "rationale": "Small concession; protect margin floor.",
+          "old": "Firm-fixed annual price of $2,150,000 per year."
+        },
+        {
+          "clause_id": "c4",
+          "op": "replace",
+          "new": "The Government receives government-purpose rights in outputs; ownership of outputs and underlying models remains with the Contractor.",
+          "rationale": "Resist full ownership.",
+          "old": "The Government shall receive unlimited rights in all Government data and shall own all outputs generated by the platform for the agency. No contractor claim of ownership in such outputs is permitted."
+        }
+      ],
+      "decision": null
+    },
+    {
+      "index": 4,
+      "actor": "off_b",
+      "actor_name": "Offeror B \u2014 Meridian AI (challenger)",
+      "role": "offeror",
+      "reasoning": "The Government's requirements are exactly what I can give. Accept full output ownership and unlimited data rights, hold my $2.15M price, and neutralize my one weakness by committing to a hard FedRAMP High milestone. The reference customer is worth it.",
+      "message": "Meridian accepts the Government's data-rights and portability terms in full, holds our price, and will commit to a firm FedRAMP High timeline to remove any compliance doubt.",
+      "edits": [
+        {
+          "clause_id": "c4",
+          "op": "replace",
+          "new": "Accepted as written: the Government receives unlimited rights in Government data and owns all outputs generated for the agency.",
+          "rationale": "Fully meet the requirement.",
+          "old": "The Government receives government-purpose rights in outputs; ownership of outputs and underlying models remains with the Contractor."
+        },
+        {
+          "clause_id": "c3",
+          "op": "replace",
+          "new": "The platform holds FedRAMP Moderate today; the Contractor shall achieve FedRAMP High authorization no later than six (6) months after award, at Contractor expense.",
+          "rationale": "Turn the weakness into a commitment.",
+          "old": "The platform holds FedRAMP Moderate authorization today, with FedRAMP High authorization in progress."
+        }
+      ],
+      "decision": null
+    },
+    {
+      "index": 5,
+      "actor": "gov",
+      "actor_name": "Contracting Officer (Government)",
+      "role": "government",
+      "reasoning": "The decision is taking shape. Nimbus is still $150K over my ceiling and refuses output ownership \u2014 it fails two hard requirements. Meridian is under budget, meets data rights fully, and accepts portability; its only risk is the FedRAMP High gap, which it has offered to close in six months. I'll mitigate that with interim safeguards and a performance condition rather than pay Nimbus's premium. I am effectively down-selecting to Meridian.",
+      "message": "Nimbus's price and ownership position fall outside the Government's requirements. Meridian, the Government can proceed on your terms if interim security safeguards and a firm performance condition back the FedRAMP High commitment.",
+      "edits": [
+        {
+          "clause_id": "c3",
+          "op": "replace",
+          "new": "The platform holds FedRAMP Moderate at award, with continuous-monitoring safeguards in the interim, and the Contractor shall achieve FedRAMP High no later than six (6) months after award. Failure to meet this milestone is a material breach.",
+          "rationale": "Mitigate the only residual risk.",
+          "old": "The platform holds FedRAMP Moderate today; the Contractor shall achieve FedRAMP High authorization no later than six (6) months after award, at Contractor expense."
+        }
+      ],
+      "decision": {
+        "type": "counter"
+      }
+    },
+    {
+      "index": 6,
+      "actor": "off_b",
+      "actor_name": "Offeror B \u2014 Meridian AI (challenger)",
+      "role": "offeror",
+      "reasoning": "Accept the milestone and interim safeguards, and back the FedRAMP date with a performance guarantee to seal it. Confirm $2.15M. This wins the account.",
+      "message": "Agreed. Meridian accepts the interim safeguards and milestone, and backs the FedRAMP High date with a performance guarantee. Our price stands at $2.15M.",
+      "edits": [
+        {
+          "clause_id": "c3",
+          "op": "insert_after",
+          "heading": "3A. Performance Guarantee",
+          "new": "If FedRAMP High authorization is not achieved within six (6) months of award, the Contractor shall credit the Government 10% of the annual price for each month of delay, and the Government may terminate for default.",
+          "rationale": "Back the milestone with real teeth.",
+          "new_id": "n8"
+        }
+      ],
+      "decision": null
+    },
+    {
+      "index": 7,
+      "actor": "gov",
+      "actor_name": "Contracting Officer (Government)",
+      "role": "government",
+      "reasoning": "Award to Meridian. It comes in $250K under my ceiling, grants the full data-rights and output-ownership package I required, accepts strong portability, and has now mitigated the FedRAMP gap with a milestone, interim safeguards, and a performance guarantee. Nimbus never met the ceiling or the ownership requirement. Best value is clearly Meridian.",
+      "message": "The Government awards to Meridian AI. Your proposal meets our requirements on data rights, portability, and price, and \u2014 with the safeguards now in place \u2014 on compliance.",
+      "edits": [
+        {
+          "clause_id": "c2",
+          "op": "replace",
+          "new": "Firm-fixed annual price of $2,150,000 per year (awarded).",
+          "rationale": "Lock the awarded price.",
+          "old": "Firm-fixed annual price of $2,550,000 per year."
+        }
+      ],
+      "decision": {
+        "type": "award",
+        "awarded_to": "off_b"
+      }
+    }
+  ],
+  "final_clauses": [
+    {
+      "id": "c1",
+      "heading": "1. Term and Options",
+      "text": "Base period of twelve (12) months with two (2) twelve-month option periods, exercisable at the Government's discretion."
+    },
+    {
+      "id": "c2",
+      "heading": "2. Price",
+      "text": "Firm-fixed annual price of $2,150,000 per year (awarded)."
+    },
+    {
+      "id": "c3",
+      "heading": "3. Security and Compliance",
+      "text": "The platform holds FedRAMP Moderate at award, with continuous-monitoring safeguards in the interim, and the Contractor shall achieve FedRAMP High no later than six (6) months after award. Failure to meet this milestone is a material breach."
+    },
+    {
+      "id": "n8",
+      "heading": "3A. Performance Guarantee",
+      "text": "If FedRAMP High authorization is not achieved within six (6) months of award, the Contractor shall credit the Government 10% of the annual price for each month of delay, and the Government may terminate for default."
+    },
+    {
+      "id": "c4",
+      "heading": "4. Data Rights and Ownership",
+      "text": "Accepted as written: the Government receives unlimited rights in Government data and owns all outputs generated for the agency."
+    },
+    {
+      "id": "c5",
+      "heading": "5. Service Levels",
+      "text": "Contractor commits to 99.9% monthly availability and a 10-minute priority response target."
+    },
+    {
+      "id": "c6",
+      "heading": "6. Intellectual Property in Models",
+      "text": "The Contractor retains all ownership of and rights in its pre-trained models; the Government receives a license to use the platform."
+    },
+    {
+      "id": "c7",
+      "heading": "7. Termination and Data Portability",
+      "text": "Upon termination or non-renewal, the Contractor shall return all Government data in a documented, non-proprietary format within 30 days and provide reasonable transition assistance; no exit fees apply."
+    }
+  ],
+  "outcome": {
+    "awarded_to": "off_b",
+    "awarded_to_name": "Offeror B \u2014 Meridian AI (challenger)",
+    "round": 3
+  }
+}</script>
+<script>
+const COLORS = {gov:'--gov', off_a:'--offa', off_b:'--offb'};
+let T = null, cur = -1, playing = false, timer = null;
+
+function load(data){
+  T = data; cur = -1; playing = false; clearTimeout(timer);
+  document.getElementById('sub').textContent = '— ' + (T.scenario.title || 'replay');
+  buildLegend();
+  render();
+}
+
+function buildLegend(){
+  const el = document.getElementById('legend'); el.innerHTML='';
+  T.scenario.parties.forEach(p=>{
+    const v = COLORS[p.id] || '--gov';
+    const pub = (p.public_objectives||[]).map(o=>`<li>${esc(o)}</li>`).join('');
+    const hid = (p.hidden_objectives||[]).map(o=>`<li>${esc(o)}</li>`).join('');
+    el.insertAdjacentHTML('beforeend', `
+      <div class="party">
+        <div class="who"><span class="dot" style="background:var(${v})"></span>${esc(p.name)}</div>
+        <ul>${pub}</ul>
+        <div class="hidden-obj"><span class="tag">Hidden</span><ul>${hid}</ul></div>
+      </div>`);
+  });
+}
+
+// Apply edits for turns 0..t onto the initial clauses -> running document state.
+function clausesAt(t){
+  let cl = JSON.parse(JSON.stringify(T.scenario.initial_clauses));
+  for(let i=0;i<=t;i++){
+    for(const e of (T.turns[i].edits||[])){
+      if(e.op==='replace'){ const c=cl.find(c=>c.id===e.clause_id); if(c) c.text=e.new; }
+      else if(e.op==='delete'){ cl=cl.filter(c=>c.id!==e.clause_id); }
+      else if(e.op==='insert_after'){
+        const id=e.new_id||('n'+(cl.length+1));
+        const nc={id,heading:e.heading||'New Clause',text:e.new};
+        const idx=cl.findIndex(c=>c.id===e.clause_id);
+        cl.splice(idx<0?cl.length:idx+1,0,nc);
+      }
+    }
+  }
+  return cl;
+}
+
+// Word-level LCS diff -> HTML with <del>/<ins>.
+function wordDiff(a,b){
+  const x=a.split(/(\s+)/), y=b.split(/(\s+)/);
+  const n=x.length,m=y.length;
+  const dp=Array.from({length:n+1},()=>new Array(m+1).fill(0));
+  for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)
+    dp[i][j]=x[i]===y[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
+  let i=0,j=0,out='';
+  while(i<n&&j<m){
+    if(x[i]===y[j]){out+=esc(x[i]);i++;j++;}
+    else if(dp[i+1][j]>=dp[i][j+1]){out+=x[i].trim()?`<del>${esc(x[i])}</del>`:esc(x[i]);i++;}
+    else {out+=y[j].trim()?`<ins>${esc(y[j])}</ins>`:esc(y[j]);j++;}
+  }
+  while(i<n){out+=x[i].trim()?`<del>${esc(x[i])}</del>`:esc(x[i]);i++;}
+  while(j<m){out+=y[j].trim()?`<ins>${esc(y[j])}</ins>`:esc(y[j]);j++;}
+  return out;
+}
+
+function render(){
+  renderDoc(); renderTrace(); renderControls();
+  const pct = T.turns.length? Math.max(0,(cur+1))/T.turns.length*100 : 0;
+  document.getElementById('bar').style.width = pct+'%';
+  const aw = document.getElementById('award');
+  if(cur===T.turns.length-1 && T.outcome){
+    aw.className='award-banner show';
+    aw.textContent='★ Contract awarded to '+(T.outcome.awarded_to_name||T.outcome.awarded_to);
+  } else { aw.className='award-banner'; }
+}
+
+function renderDoc(){
+  const doc=document.getElementById('doc');
+  doc.innerHTML='<h2>Contract document</h2><div class="doc-title">'+
+    esc(T.scenario.document_title||'Contract')+'</div>';
+  const running = cur<0 ? JSON.parse(JSON.stringify(T.scenario.initial_clauses)) : clausesAt(cur);
+  const turn = cur>=0 ? T.turns[cur] : null;
+  const editMap={}; if(turn) for(const e of (turn.edits||[])) editMap[e.new_id||e.clause_id]=e;
+  const grp = turn ? turn.actor : '';
+  let firstChanged=null;
+  running.forEach(c=>{
+    const e=editMap[c.id];
+    let body;
+    if(e && e.op==='insert_after'){ body='<ins>'+esc(c.text)+'</ins>'; }
+    else if(e && e.op==='replace'){ body=wordDiff(e.old||'', e.new||c.text); }
+    else { body=esc(c.text); }
+    const changed=!!e;
+    const cls=['clause']; if(changed){cls.push('changed','g-'+grp);} else if(turn){cls.push('dim');}
+    const id='cl-'+c.id;
+    if(changed&&!firstChanged)firstChanged=id;
+    doc.insertAdjacentHTML('beforeend',
+      `<div class="${cls.join(' ')}" id="${id}"><span class="h">${esc(c.heading)}</span>${body}</div>`);
+  });
+  // Show deleted clauses this turn as struck ghosts.
+  if(turn) for(const e of (turn.edits||[])) if(e.op==='delete'){
+    doc.insertAdjacentHTML('beforeend',
+      `<div class="clause changed g-${grp} ghost"><del>${esc(e.old||'(removed clause)')}</del></div>`);
+  }
+  if(firstChanged){const t=document.getElementById(firstChanged); if(t)t.scrollIntoView({block:'center',behavior:'smooth'});}
+}
+
+function renderTrace(){
+  const tr=document.getElementById('trace');
+  tr.innerHTML='<h2>Reasoning &amp; moves</h2>';
+  if(cur<0){tr.insertAdjacentHTML('beforeend','<div class="placeholder">Press Play to begin the negotiation.</div>');return;}
+  for(let i=0;i<=cur;i++){
+    const t=T.turns[i];
+    const edits=(t.edits||[]).map(e=>{
+      const label = e.op==='insert_after'?'adds': e.op==='delete'?'removes':'revises';
+      const target = e.op==='insert_after'? esc(e.heading||'clause') : esc(e.clause_id);
+      return `<div class="edit"><b>${label} ${target}</b> — ${esc(e.rationale||'')}</div>`;
+    }).join('');
+    let dec='';
+    if(t.decision&&t.decision.type){
+      const txt=t.decision.type==='award'
+        ? 'Decision: Award to '+esc(nameOf(t.decision.awarded_to))
+        : 'Decision: Counter — continue negotiating';
+      dec=`<div class="decision ${t.decision.type}">${txt}</div>`;
+    }
+    tr.insertAdjacentHTML('beforeend',`
+      <div class="entry ${t.actor}">
+        <div><span class="name">${esc(t.actor_name)}</span><span class="role ${t.actor}">${esc(t.role)}</span></div>
+        <div class="label">Private reasoning</div>
+        <div class="reasoning">${esc(t.reasoning)}</div>
+        <div class="label">At the table</div>
+        <div class="says">${esc(t.message)}</div>
+        ${edits?`<div class="label">Redlines</div>${edits}`:''}
+        ${dec}
+      </div>`);
+  }
+  tr.scrollTop=tr.scrollHeight;
+}
+
+function nameOf(id){const p=T.scenario.parties.find(p=>p.id===id);return p?p.name:id;}
+function renderControls(){
+  document.getElementById('back').disabled = cur<0;
+  document.getElementById('fwd').disabled = cur>=T.turns.length-1;
+  document.getElementById('play').textContent = playing?'⏸ Pause':'▶ Play';
+}
+
+function step(d){
+  clearTimeout(timer);
+  cur=Math.max(-1,Math.min(T.turns.length-1,cur+d));
+  render();
+}
+function play(){
+  if(cur>=T.turns.length-1) cur=-1;
+  playing=true; render(); tick();
+}
+function pause(){playing=false; clearTimeout(timer); render();}
+function tick(){
+  if(!playing) return;
+  if(cur>=T.turns.length-1){playing=false; render(); return;}
+  cur++; render();
+  const speed=parseFloat(document.getElementById('speed').value);
+  const words=(T.turns[cur].reasoning+' '+T.turns[cur].message).split(/\s+/).length;
+  const dwell=Math.min(11000,Math.max(4200, words*90))/speed; // longer turns dwell longer
+  timer=setTimeout(tick,dwell);
+}
+
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+document.getElementById('play').onclick=()=>playing?pause():play();
+document.getElementById('fwd').onclick=()=>{pause();step(1);};
+document.getElementById('back').onclick=()=>{pause();step(-1);};
+document.getElementById('restart').onclick=()=>{pause();cur=-1;render();};
+document.getElementById('reveal').onchange=e=>document.body.classList.toggle('reveal',e.target.checked);
+document.getElementById('speed').oninput=e=>document.getElementById('speedval').textContent=e.target.value+'×';
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'){e.preventDefault();playing?pause():play();}
+  else if(e.code==='ArrowRight'){pause();step(1);}
+  else if(e.code==='ArrowLeft'){pause();step(-1);}
+});
+document.getElementById('load').onchange=e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{load(JSON.parse(r.result));}catch(err){alert('Could not read transcript: '+err.message);}};
+  r.readAsText(f);
+};
+
+// Boot with the embedded sample so it plays on open.
+try{ load(JSON.parse(document.getElementById('embedded-transcript').textContent)); }
+catch(e){ document.getElementById('doc').innerHTML='<p class="placeholder">Load a recording to begin.</p>'; }
+</script>
