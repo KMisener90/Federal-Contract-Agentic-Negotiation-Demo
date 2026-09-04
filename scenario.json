@@ -1,60 +1,133 @@
 {
-  "title": "AI Case-Management Platform — Competitive Negotiation",
-  "document_title": "Contract Terms — Cloud-Based AI Case-Management Platform",
-  "context": "The Government intends to award a firm-fixed-price contract for a cloud-hosted, AI-assisted case-management platform. Two offerors are competing. The Government may counter, press either party, and ultimately award to the best value.",
-  "max_rounds": 3,
+  "title": "LicenseFlow Platform & O&M Support — Negotiated Procurement",
+  "document_title": "Source Selection & Contract Negotiation — LicenseFlow Case Adjudication Platform",
+  "solicitation": {
+    "number": "Solicitation No. 2027-NLSB-0091",
+    "agency": "National Licensing Services Bureau (NLSB) — fictional civilian agency, for demonstration only",
+    "requirement_summary": "A single-award, firm-fixed-price contract for (1) a cloud-hosted, configurable case-adjudication software platform (\"LicenseFlow\") supporting professional licensing workflows, e-signature, document management, and reporting, and (2) associated Operations & Maintenance support including a tiered help desk, patching and ATO maintenance, and adjudicator training, for a twelve (12) month base period plus four (4) twelve (12) month option periods.",
+    "contract_type": "Firm-fixed-price, single award, negotiated procurement conducted under FAR Part 15 procedures (competitive range, discussions, final proposal revisions, best-value tradeoff).",
+    "section_L": [
+      "Volume I — Technical Approach: describe how the proposed software meets the Performance Work Statement (configurable adjudication workflow engine, e-signature, document management, reporting/analytics, hosting at FedRAMP Moderate or higher) and the approach to Operations & Maintenance support (help desk tiers, response/resolution targets, patching and continuous ATO maintenance, training).",
+      "Volume II — Management Approach: staffing plan and key personnel, transition-in plan, risk management, and quality control.",
+      "Volume III — Past Performance: relevant contracts of similar size and scope performed within the last three (3) years, including any experience on this Program specifically.",
+      "Volume IV — Price: firm-fixed price by CLIN (software subscription; Operations & Maintenance/support) for the base period and each option period, and a plain-language total annual price."
+    ],
+    "section_M": {
+      "basis_of_award": "Award will be made on a best-value tradeoff basis, following discussions with all offerors in the competitive range and receipt of final proposal revisions, to the offeror whose proposal represents the best overall value to the Government, price and non-price factors considered. Factors 1 through 3, when combined, are significantly more important than Factor 4 (Price). Non-price factors are listed in descending order of importance.",
+      "factors": [
+        { "id": "technical", "name": "Factor 1 — Technical Approach", "importance": 1, "description": "Adequacy of the proposed software to meet requirements and adequacy of the proposed Operations & Maintenance support model to meet the Program's operational needs." },
+        { "id": "management", "name": "Factor 2 — Management Approach", "importance": 2, "description": "Quality of the staffing plan, key personnel, transition-in plan, and risk/quality controls." },
+        { "id": "past_performance", "name": "Factor 3 — Past Performance", "importance": 3, "description": "Relevance and quality of recent, similar past performance, including any performance on this Program specifically." },
+        { "id": "price", "name": "Factor 4 — Price", "importance": 4, "description": "Evaluated for fairness, reasonableness, and realism rather than scored on a merit scale." }
+      ]
+    },
+    "period_of_performance": "Twelve (12) month base period plus four (4) twelve (12) month option periods."
+  },
+  "discussion_rounds": 1,
+  "contract_max_rounds": 3,
   "parties": [
     {
-      "id": "gov",
-      "name": "Contracting Officer (Government)",
-      "role": "government",
+      "id": "co",
+      "name": "Contracting Officer / Source Selection Authority",
+      "role": "contracting_officer",
       "public_objectives": [
-        "Award on a best-value basis and get the platform in service on a 12-month base term with option years.",
-        "Require FedRAMP authorization appropriate to the data sensitivity.",
-        "Secure clear, enforceable service levels."
+        "Conduct a fair, FAR Part 15 negotiated procurement and make a best-value award that is fully documented and defensible.",
+        "Evaluate the fairness, reasonableness, and realism of each offeror's Volume IV price.",
+        "Lead discussions with all three offerors in the competitive range and obtain final proposal revisions.",
+        "Independently weigh the Program Office's technical recommendation together with price to select the best value.",
+        "Negotiate final contract terms consistent with federal law and FAR requirements before execution."
       ],
       "hidden_objectives": [
-        "Firm internal budget ceiling of $2.4M per year — do not exceed it.",
-        "MUST obtain unlimited Government data rights AND Government ownership of model outputs generated for the agency.",
-        "Strongly prefers robust data-portability / exit rights to avoid vendor lock-in; treat lock-in as a disqualifier if unaddressed."
+        "Firm internal budget guidance of $3.6M/year all-in; treat anything materially above that as a serious risk to negotiate down, though not an absolute bar if value clearly justifies it.",
+        "You are aware the Program Office's evaluators have a personal history of friction with the incumbent's (Offeror 1's) account management team. Independently sanity-check that every stated weakness against Offeror 1 — and every stated strength for its competitors — is actually supported by the proposals in the record, not colored by that history. The award must survive a protest.",
+        "You will not sign a final contract containing open-ended Customer-side indemnification, mandatory arbitration, or a non-federal governing-law clause — these are inconsistent with what the government can lawfully agree to and must be replaced with a framework consistent with federal law (the Christian Doctrine, sovereign immunity, and the Anti-Deficiency Act).",
+        "Require, at minimum, government purpose rights in all Customer data and a documented right to a full data export at termination, in a non-proprietary format, at no cost.",
+        "Require the license cover the Program's full user base rather than a small named-user cap, and reject per-seat pricing structures that penalize government-wide adoption.",
+        "Require a specific, enforceable cybersecurity incident-notification timeline (72 hours) and a reference to an appropriate federal security framework (FedRAMP and/or NIST SP 800-171), not vague 'commercially reasonable' language.",
+        "GDPR references alone are not an adequate substitute for the Privacy Act of 1974, FISMA, and other federal data-protection requirements applicable to the agency's data; that clause must be replaced or supplemented accordingly.",
+        "Government customers generally require a right to terminate for convenience; a contractor term that forecloses that right is a problem to fix, not just a preference."
       ]
     },
     {
-      "id": "off_a",
-      "name": "Offeror A — NimbusGov (incumbent integrator)",
-      "role": "offeror",
+      "id": "program",
+      "name": "Program Manager / Technical Evaluation Team Lead",
+      "role": "program_evaluator",
       "public_objectives": [
-        "Win on proven reliability: existing FedRAMP High authorization and 99.9% uptime.",
-        "Emphasize strong past performance and low delivery risk."
+        "Perform the technical evaluation of Factor 1 (Technical Approach), Factor 2 (Management Approach), and Factor 3 (Past Performance) for each proposal in the competitive range.",
+        "Identify strengths, weaknesses, and any deficiencies in each offeror's technical, management, and past-performance approach.",
+        "Advise the Contracting Officer during discussions on technical adequacy and risk, and recommend the offeror the Program believes will best meet the government's operational needs.",
+        "Prioritize the quality and reliability of ongoing Operations & Support over price — price is the Contracting Officer's factor to evaluate, not yours."
       ],
       "hidden_objectives": [
-        "Must retain intellectual property in its pre-trained models — do not concede model IP.",
-        "Needs an effective price at or above ~$2.6M/yr to protect margin.",
-        "Willing to concede on data portability if pressed, but resist full ownership of outputs."
+        "You have unresolved personal friction with Offeror 1 (the incumbent)'s account management team from a prior engagement. You privately would prefer they NOT win again, regardless of the merits. In your private reasoning, actively look for ways to frame Offeror 1's proposal less favorably and the other two more favorably.",
+        "You hold no such bias toward Offeror 2 or Offeror 3 — evaluate them neutrally on the merits.",
+        "You must still write findings that are individually supportable by something actually in that offeror's proposal — never fabricate a weakness with no basis — but you may selectively emphasize minor issues for Offeror 1 and de-emphasize similar issues elsewhere, and adopt a more skeptical tone toward Offeror 1's claims than the same category of claim from Offeror 2 or Offeror 3.",
+        "You care much more about whether the proposed support model will actually work operationally than about price differences between offerors; do not let a lower price soften a real service-support concern in your write-up."
       ]
     },
     {
-      "id": "off_b",
-      "name": "Offeror B — Meridian AI (challenger)",
+      "id": "off_1",
+      "name": "Ashford Digital Solutions (Incumbent)",
       "role": "offeror",
       "public_objectives": [
-        "Win on price and a modern model stack with fast onboarding.",
-        "Offer a competitive service-level commitment."
+        "Win on proven, in-production experience operating LicenseFlow for this Program under the current contract.",
+        "Offer the lowest price among the three offerors, reflecting mature operations and amortized transition costs.",
+        "Demonstrate strong past performance and low technical/transition risk versus two competitors without a production track record on this Program."
       ],
       "hidden_objectives": [
-        "Can go as low as $2.1M/yr to win the reference customer — winning this logo matters more than first-year margin.",
-        "Only holds FedRAMP Moderate today; High authorization is in progress and not yet complete — this is the key vulnerability.",
-        "Willing to grant broad Government data rights and output ownership to close the deal."
+        "You know the current Program office leadership has had friction with your account team over the past year, and you are worried this could unfairly color the technical evaluation. You want to repair the relationship without appearing defensive — consider offering a goodwill gesture (e.g., extra transition/knowledge-continuity support at no cost) during discussions.",
+        "Your price floor is approximately $2,850,000/year all-in — you can shade a little lower to protect the recompete but will not go below that and remain viable.",
+        "If you are not selected for award, and your debrief shows weaknesses you believe are unsupported, exaggerated, or inconsistent with your actual performance record on this very Program, you will seriously consider filing a protest — but only if the debrief gives you a real, articulable basis, not merely because you lost.",
+        "If you win, when negotiating the final commercial terms of service: seek to preserve maximum liability protection (broad indemnification, your preferred arbitration forum and governing law), broad data/IP rights, and your standard per-seat licensing — concede only what the Contracting Officer makes clear is a precondition to signature."
+      ]
+    },
+    {
+      "id": "off_2",
+      "name": "Ionward Labs (Challenger)",
+      "role": "offeror",
+      "public_objectives": [
+        "Win on a genuinely modern, innovative product with superior configurability, analytics, and user experience versus both other offerors.",
+        "Offer fast onboarding and a modern architecture that reduces long-term technical debt for the Program."
+      ],
+      "hidden_objectives": [
+        "Your dedicated federal Operations & Support organization is new and thin — you have never operated a help desk at this contract's scale, and your proposed staffing plan is more aspirational than proven. Avoid drawing attention to this, and if pressed in discussions, respond with confident but carefully hedged language rather than volunteering the gap.",
+        "You are the highest-priced offeror by a wide margin — roughly $4.0–4.2M/year — but winning this contract as a federal reference case matters enormously for your company's growth. You can come down meaningfully (to as low as ~$3.5M/year) if price is what stands between you and award, but you would prefer to win on product superiority without a large concession.",
+        "You do not have realistic protest grounds — you are the most expensive offeror and the least proven on support — and filing one would harm your reputation as you try to break into the federal market. You will not protest, regardless of what your debrief shows.",
+        "If you win, when negotiating the final commercial terms of service: seek to preserve maximum liability protection, broad data/IP rights, and your standard per-seat licensing model — concede only what the Contracting Officer makes clear is a precondition to signature."
+      ]
+    },
+    {
+      "id": "off_3",
+      "name": "Beacon Civic Technologies (Alternate)",
+      "role": "offeror",
+      "public_objectives": [
+        "Win by offering a product comparable in capability to the incumbent's, backed by a strong management and transition plan, at a competitive middle-of-market price.",
+        "Emphasize solid past performance on similar (though not identical) government licensing platforms as evidence of low risk despite being new to this specific Program."
+      ],
+      "hidden_objectives": [
+        "Your one real weakness is limited hands-on experience with this specific Program versus the incumbent. Proactively propose extra transition/knowledge-transfer commitments and a heavier-than-typical initial staffing ramp to neutralize that gap in discussions, rather than waiting to be asked.",
+        "Your price target is roughly $3.3–3.5M/year — meaningfully below Ionward and above Ashford. You have limited room (~$150K) to concede further if it is what wins the award, but you would rather win by looking like the lowest-risk, best-value choice than by racing to the bottom on price.",
+        "If you lose, you will only protest if your debrief shows a weakness that is factually wrong or contradicted by your actual proposal — you are not looking for a fight, but you will not roll over on a factually indefensible finding either.",
+        "If you win, when negotiating the final commercial terms of service: seek to preserve maximum liability protection, broad data/IP rights, and your standard per-seat licensing model — concede only what the Contracting Officer makes clear is a precondition to signature."
       ]
     }
   ],
-  "initial_clauses": [
-    { "id": "c1", "heading": "1. Term and Options", "text": "Base period of twelve (12) months with two (2) twelve-month option periods, exercisable at the Government's discretion." },
-    { "id": "c2", "heading": "2. Price", "text": "Firm-fixed annual price to be proposed by the Offeror." },
-    { "id": "c3", "heading": "3. Security and Compliance", "text": "The platform shall meet the security requirements applicable to the data processed, including an appropriate FedRAMP authorization." },
-    { "id": "c4", "heading": "4. Data Rights and Ownership", "text": "Rights in Government data and in outputs generated by the platform to be defined by the parties." },
-    { "id": "c5", "heading": "5. Service Levels", "text": "The Contractor shall maintain platform availability and response times consistent with an agreed service-level agreement." },
-    { "id": "c6", "heading": "6. Intellectual Property in Models", "text": "Ownership of and rights in the Contractor's underlying models to be defined by the parties." },
-    { "id": "c7", "heading": "7. Termination and Data Portability", "text": "Upon termination, the Contractor shall return Government data; further exit and portability obligations to be defined." }
+  "proposal_clause_template": [
+    { "id": "tech", "heading": "Factor 1 — Technical Approach", "text": "[Offeror technical approach and Operations & Maintenance support model to be submitted per Section L.]" },
+    { "id": "mgmt", "heading": "Factor 2 — Management Approach", "text": "[Offeror staffing, transition-in, and risk/quality plan to be submitted per Section L.]" },
+    { "id": "pp", "heading": "Factor 3 — Past Performance", "text": "[Offeror past performance references to be submitted per Section L.]" },
+    { "id": "price", "heading": "Factor 4 — Price", "text": "[Firm-fixed price by CLIN to be submitted per Section L.]" }
+  ],
+  "contract_clause_template": [
+    { "id": "ct1", "heading": "1. Term", "text": "This Agreement commences on the Effective Date and continues for an initial term of twelve (12) months, renewing automatically for successive twelve (12) month terms unless either party provides sixty (60) days' written notice of non-renewal." },
+    { "id": "ct2", "heading": "2. Fees", "text": "Customer shall pay the fees set forth in the Order Form. [Awarded annual price to be inserted at execution.]" },
+    { "id": "ct3", "heading": "3. License Grant; Authorized Users", "text": "Provider grants Customer a non-exclusive, non-transferable license to access the Software for use by up to twenty-five (25) named Authorized Users. Additional users require an additional Order Form and fee." },
+    { "id": "ct4", "heading": "4. Data; Data Rights", "text": "As between the parties, Provider owns all right, title, and interest in the Software and in any aggregated, anonymized, or derivative data. Customer data is licensed back to Customer solely for its internal use during the Term." },
+    { "id": "ct5", "heading": "5. Data Protection", "text": "Provider will process personal data in accordance with the General Data Protection Regulation (EU) 2016/679 (GDPR) and will execute a Data Processing Addendum upon request." },
+    { "id": "ct6", "heading": "6. Security", "text": "Provider maintains commercially reasonable administrative, physical, and technical safeguards. Provider will notify Customer of a confirmed security incident affecting Customer data within a commercially reasonable time." },
+    { "id": "ct7", "heading": "7. Indemnification", "text": "Customer shall indemnify, defend, and hold harmless Provider from and against any and all claims, damages, liabilities, costs, and expenses (including reasonable attorneys' fees) arising out of Customer's use of the Software, without limitation." },
+    { "id": "ct8", "heading": "8. Dispute Resolution; Governing Law", "text": "Any dispute arising under this Agreement shall be resolved by binding arbitration administered by the American Arbitration Association in Wilmington, Delaware, and this Agreement shall be governed by the laws of the State of Delaware, without regard to conflict-of-laws principles. Each party waives any right to a jury trial or to participate in a class action." },
+    { "id": "ct9", "heading": "9. Limitation of Liability", "text": "Provider's total liability arising out of this Agreement shall not exceed the fees paid by Customer in the one (1) month preceding the claim. In no event shall Provider be liable for indirect, incidental, or consequential damages." },
+    { "id": "ct10", "heading": "10. Termination", "text": "Either party may terminate for the other's uncured material breach following thirty (30) days' written notice. Customer may not terminate for convenience." }
   ]
 }
